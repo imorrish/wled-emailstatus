@@ -46,7 +46,7 @@ while ($true) {
         } | ConvertTo-Json
         Invoke-WebRequest -Uri $wledUrl -Method POST -Body $body -ContentType "application/json"
         #
-    }else{
+    } else {
         $body = @{
             "ps" = $wledPresetOff
         } | ConvertTo-Json
