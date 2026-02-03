@@ -8,3 +8,6 @@ Reguires an Entra App Registration (App Management or GA permissions)
 - Grant Delegated App permissions for Mail.Read, User.Read
 
 Run the script using pwsh (I'm running it on MacOS).
+
+![WLED status example](images/IMG_20260203_082239.jpg)
+![WLED status example 2](images/IMG_20260203_083319.jpg)
