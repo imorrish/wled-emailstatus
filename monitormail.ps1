@@ -1,4 +1,4 @@
-# Monitor inbox for PIM requests and selt led
+# Monitor inbox for PIM requests and set LED
 # Required modules
 $graphModuleName = "Microsoft.Graph"
 $graphModuleScope = "CurrentUser"
