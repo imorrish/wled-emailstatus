@@ -1,48 +1,58 @@
 # Monitor inbox for PIM requests and selt led
 # Required modules
-Install-Module -Name Microsoft.Graph -Scope CurrentUser -Force
+$graphModuleName = "Microsoft.Graph"
+$graphModuleScope = "CurrentUser"
+$graphModuleForce = $true
+Install-Module -Name $graphModuleName -Scope $graphModuleScope -Force:$graphModuleForce
 
 # Connect to Microsoft Graph
 # Use this App Reg for Delegated on permission
-$AppID = "[your Entra App registration ID]"
-$TenantID = "[Your Entra Tenant ID]"
-Connect-MgGraph -ClientId "$AppID" -TenantId "$TenantID" -Scopes "Mail.Read"
+$appId = "[your Entra App registration ID]"
+$tenantId = "[Your Entra Tenant ID]"
+$graphScopes = @("Mail.Read")
+Connect-MgGraph -ClientId $appId -TenantId $tenantId -Scopes $graphScopes
 
+# Configuration
+$pollIntervalSeconds = 60
+$initialLookbackMinutes = 5
+$userEmailAddress = "[your email address]"
+$messageSubjectPattern = "PIM: Review*"
+$messageReadState = $false
+$messageTopLimit = 10
+$wledBaseUrl = "http://[IP address of wled device]"
+$wledStatePath = "/json/state"
+$wledPresetOn = 1
+$wledPresetOff = 2
 
-
-
-# Set polling interval (e.g., every 60 seconds)
-$pollInterval = 60
-$lastChecked = (Get-Date).AddMinutes(-5)
-
-# WLED preset recall URL
-$wledUrl = "http://[IP address of wled device]/json/state"
+# Derived values
+$lastChecked = (Get-Date).AddMinutes(-$initialLookbackMinutes)
+$wledUrl = "$wledBaseUrl$wledStatePath"
 
 while ($true) {
     Write-Host "Checking inbox at $(Get-Date)..."
 
     # Get messages received after last check
-    $messages = Get-MgUserMessage -UserId "[your email address]" -Top 10 |
+    $messages = Get-MgUserMessage -UserId $userEmailAddress -Top $messageTopLimit |
         Where-Object {
-            $_.Subject -like "PIM: Review*" -and
-            $_.IsRead -eq $false
+            $_.Subject -like $messageSubjectPattern -and
+            $_.IsRead -eq $messageReadState
         }
 
     if ($messages.Count -gt 0) {
         Write-Host "Triggering WLED preset for message: $($messages[0].Subject)"
 
         $body = @{
-            "ps"=1
+            "ps" = $wledPresetOn
         } | ConvertTo-Json
         Invoke-WebRequest -Uri $wledUrl -Method POST -Body $body -ContentType "application/json"
         #
     }else{
         $body = @{
-            "ps"=2
+            "ps" = $wledPresetOff
         } | ConvertTo-Json
         Invoke-WebRequest -Uri $wledUrl -Method POST -Body $body -ContentType "application/json"
     }
 
     $lastChecked = Get-Date
-    Start-Sleep -Seconds $pollInterval
+    Start-Sleep -Seconds $pollIntervalSeconds
 }
